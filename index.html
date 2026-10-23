@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Binary Shop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e2e2e2;
+            margin: 0;
+            padding: 20px;
+        }
+        .contenedor {
+            background-color: white;
+            border: 2px solid #999;
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            box-shadow: 3px 3px 5px #888888;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0 15px 0;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .oculto {
+            display: none;
+        }
+        .producto-card {
+            border: 1px dashed #333;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+        }
+        .producto-img {
+            width: 100px;
+            height: 100px;
+            background: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #555;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .factura-box {
+            border: 2px solid green;
+            padding: 10px;
+            background: #eaffea;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="contenedor" id="app">
+    <!-- Vista Registro -->
+    <div id="vista-registro">
+        <h1>Binary Shop</h1>
+        <h3>Registro de Usuario</h3>
+        <label>Nickname:</label>
+        <input type="text" id="reg-nickname">
+        <label>Contraseña:</label>
+        <input type="password" id="reg-password">
+        <label>Rol:</label>
+        <select id="reg-rol">
+            <option value="comprador">Comprador</option>
+            <option value="vendedor">Vendedor</option>
+            <option value="administrador">Administrador</option>
+        </select>
+        <button onclick="registrarUsuario()">Ingresar</button>
+        <p>¿Ya tienes una cuenta? <a href="#" onclick="mostrarLogin()">Iniciar sesión</a></p>
+    </div>
+
+    <!-- Vista Login -->
+    <div id="vista-login" class="oculto">
+        <h1>Binary Shop</h1>
+        <h3>Iniciar Sesión</h3>
+        <label>Nickname:</label>
+        <input type="text" id="log-nickname">
+        <label>Contraseña:</label>
+        <input type="password" id="log-password">
+        <button onclick="iniciarSesion()">Entrar</button>
+        <p><a href="#" onclick="volverRegistro()">Regresar al registro</a></p>
+    </div>
+
+    <!-- Vista Formulario Adicional -->
+    <div id="vista-formulario" class="oculto">
+        <h1>Binary Shop</h1>
+        <h3>Llene el siguiente formulario</h3>
+        <label>Contraseña:</label>
+        <input type="password" id="form-password">
+        <label>Nombre:</label>
+        <input type="text" id="form-nombre">
+        <label>Apellido:</label>
+        <input type="text" id="form-apellido">
+        <label>Nickname nuevamente:</label>
+        <input type="text" id="form-nickname">
+        <label>Dirección:</label>
+        <input type="text" id="form-direccion">
+        <label>Datos bancarios:</label>
+        <input type="text" id="form-banco">
+        <button onclick="guardarFormulario()">Enviar Formulario</button>
+    </div>
+
+    <!-- Vista Comprador -->
+    <div id="vista-comprador" class="oculto">
+        <h1>Binary Shop - Comprador</h1>
+        <button onclick="verCatalogo()">Ver catálogo</button>
+        <button onclick="verCarrito()">Agregar al carrito</button>
+        <button onclick="cerrarSesion()">Cerrar sesión</button>
+        <div id="contenido-comprador"></div>
+    </div>
+
+    <!-- Vista Vendedor -->
+    <div id="vista-vendedor" class="oculto">
+        <h1>Binary Shop - Vendedor</h1>
+        <button onclick="mostrarSubirProducto()">Subir producto a la página</button>
+        <button onclick="cerrarSesion()">Salir</button>
+        <div id="contenido-vendedor"></div>
+    </div>
+
+    <!-- Vista Administrador -->
+    <div id="vista-admin" class="oculto">
+        <h1>Binary Shop - Administrador</h1>
+        <p>Gestión de la plataforma:</p>
+        <div id="contenido-admin"></div>
+        <button onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
+</div>
+
+<script>
+    let baseDeDatosUsuarios = [];
+    let usuarioEnSesion = null;
+    
+    // Productos iniciales predeterminados
+    let listaProductos = [
+        { nombre: "Smartphone", precio: 300, info: "Smartphone básico", imagen: "[imagen Smartphoone]" },
+        { nombre: "Laptop", precio: 700, info: "Laptop de estudio", imagen: "[imagen Laptop]" },
+        { nombre: "AirPods", precio: 50, info: "Audífonos inalámbricos", imagen: "[Imagen AirPods]" }
+    ];
+
+    function cambiarVista(idVista) {
+        document.getElementById('vista-registro').classList.add('oculto');
+        document.getElementById('vista-login').classList.add('oculto');
+        document.getElementById('vista-formulario').classList.add('oculto');
+        document.getElementById('vista-comprador').classList.add('oculto');
+        document.getElementById('vista-vendedor').classList.add('oculto');
+        document.getElementById('vista-admin').classList.add('oculto');
+        
+        document.getElementById(idVista).classList.remove('oculto');
+    }
+
+    function registrarUsuario() {
+        let nicknameInput = document.getElementById('reg-nickname').value;
+        let passwordInput = document.getElementById('reg-password').value;
+        let rolInput = document.getElementById('reg-rol').value;
+
+        if(!nicknameInput || !passwordInput) {
+            alert("Por favor llena todos los campos.");
+            return;
+        }
+
+        let usuarioNuevo = {
+            nickname: nicknameInput,
+            password: passwordInput,
+            rol: rolInput,
+            perfilCompleto: false
+        };
+
+        baseDeDatosUsuarios.push(usuarioNuevo);
+        alert("Registro exitoso. Ahora pasa a iniciar sesión.");
+        mostrarLogin();
+    }
+
+    function mostrarLogin() {
+        cambiarVista('vista-login');
+    }
+
+    function volverRegistro() {
+        cambiarVista('vista-registro');
+    }
+
+    function iniciarSesion() {
+        let nick = document.getElementById('log-nickname').value;
+        let pass = document.getElementById('log-password').value;
+
+        let usuarioEncontrado = baseDeDatosUsuarios.find(u => u.nickname === nick && u.password === pass);
+
+        if(usuarioEncontrado) {
+            usuarioEnSesion = usuarioEncontrado;
+            if(!usuarioEnSesion.perfilCompleto) {
+                cambiarVista('vista-formulario');
+                document.getElementById('form-nickname').value = usuarioEnSesion.nickname;
+                document.getElementById('form-password').value = usuarioEnSesion.password;
+            } else {
+                redirigirSegunRol();
+            }
+        } else {
+            alert("Nickname o contraseña incorrectos.");
+        }
+    }
+
+    function guardarFormulario() {
+        let pass = document.getElementById('form-password').value;
+        let nombre = document.getElementById('form-nombre').value;
+        let apellido = document.getElementById('form-apellido').value;
+        let nick = document.getElementById('form-nickname').value;
+        let direccion = document.getElementById('form-direccion').value;
+        let datosBancarios = document.getElementById('form-banco').value;
+
+        if(!nombre || !apellido || !nick || !direccion || !datosBancarios) {
+            alert("Debe rellenar todos los campos del formulario.");
+            return;
+        }
+
+        usuarioEnSesion.password = pass;
+        usuarioEnSesion.nombre = nombre;
+        usuarioEnSesion.apellido = apellido;
+        usuarioEnSesion.nickname = nick;
+        usuarioEnSesion.direccion = direccion;
+        usuarioEnSesion.datosBancarios = datosBancarios;
+        usuarioEnSesion.perfilCompleto = true;
+
+        alert("Formulario guardado correctamente.");
+        redirigirSegunRol();
+    }
+
+    function redirigirSegunRol() {
+        if(usuarioEnSesion.rol === 'comprador') {
+            cambiarVista('vista-comprador');
+        } else if(usuarioEnSesion.rol === 'vendedor') {
+            cambiarVista('vista-vendedor');
+        } else if(usuarioEnSesion.rol === 'administrador') {
+            cambiarVista('vista-admin');
+            actualizarPanelAdmin();
+        }
+    }
+
+    function cerrarSesion() {
+        usuarioEnSesion = null;
+        cambiarVista('vista-registro');
+    }
+
+    // Funciones del Comprador
+    function verCatalogo() {
+        let contenedor = document.getElementById('contenido-comprador');
+        let htmlCatalogo = "<h3>Catálogo de Productos</h3>";
+        
+        listaProductos.forEach((prod, indice) => {
+            htmlCatalogo += `
+                <div class="producto-card">
+                    <div class="producto-img">${prod.imagen}</div>
+                    <p><b>${prod.nombre}</b> - ${prod.info}</p>
+                    <p>Precio: $${prod.precio}</p>
+                    <button onclick="seleccionarProducto(${indice})">Seleccionar producto</button>
+                </div>
+            `;
+        });
+        contenedor.innerHTML = htmlCatalogo;
+    }
+
+    function seleccionarProducto(indice) {
+        let productoSeleccionado = listaProductos[indice];
+        let confirmacion = confirm(`¿Es el producto que quiere comprar: ${productoSeleccionado.nombre} por $${productoSeleccionado.precio}? (Pulse Aceptar para Sí, Cancelar para No)`);
+        
+        if(confirmacion) {
+            let usarMetodoPago = confirm(`¿Desea usar sus datos bancarios registrados (${usuarioEnSesion.datosBancarios}) como método de pago?`);
+            if(usarMetodoPago) {
+                let numeroReferencia = Math.floor(100000 + Math.random() * 900000);
+                let contenedor = document.getElementById('contenido-comprador');
+                contenedor.innerHTML = `
+                    <div class="factura-box">
+                        <h3>¡Compra Exitosa! Factura</h3>
+                        <p><b>Referencia de pago:</b> #${numeroReferencia}</p>
+                        <p><b>Cliente:</b> ${usuarioEnSesion.nombre} ${usuarioEnSesion.apellido}</p>
+                        <p><b>Dirección de entrega:</b> ${usuarioEnSesion.direccion}</p>
+                        <p><b>Producto adquirido:</b> ${productoSeleccionado.nombre}</p>
+                        <p><b>Monto cancelado:</b> $${productoSeleccionado.precio}</p>
+                        <p><b>Método de pago:</b> Banco (${usuarioEnSesion.datosBancarios})</p>
+                    </div>
+                `;
+            } else {
+                alert("Pago cancelado por el usuario.");
+            }
+        } else {
+            alert("Operación cancelada.");
+        }
+    }
+
+    function verCarrito() {
+        let contenedor = document.getElementById('contenido-comprador');
+        contenedor.innerHTML = "<h3>Carrito de Compras</h3><p>Aquí se almacenan temporalmente los productos que agregues.</p>";
+    }
+
+    // Funciones del Vendedor
+    function mostrarSubirProducto() {
+        let contenedor = document.getElementById('contenido-vendedor');
+        contenedor.innerHTML = `
+            <h3>Subir producto</h3>
+            <label>Seleccione producto:</label>
+            <select id="vendedor-producto-nombre">
+                <option value="Smartphone">Smartphone</option>
+                <option value="Laptop">Laptop</option>
+                <option value="AirPods">AirPods</option>
+            </select>
+            <label>Información del producto:</label>
+            <input type="text" id="vendedor-info" placeholder="Descripción breve">
+            <label>Precio:</label>
+            <input type="number" id="vendedor-precio" placeholder="Ej. 150">
+            <label>Imagen (Descripción no realista):</label>
+            <input type="text" id="vendedor-imagen" value="[Dibujo simple]">
+            <button onclick="publicarProducto()">Publicar producto</button>
+        `;
+    }
+
+    function publicarProducto() {
+        let nombreProd = document.getElementById('vendedor-producto-nombre').value;
+        let infoProd = document.getElementById('vendedor-info').value;
+        let precioProd = parseFloat(document.getElementById('vendedor-precio').value);
+        let imgProd = document.getElementById('vendedor-imagen').value;
+
+        if(!infoProd || isNaN(precioProd)) {
+            alert("Por favor completa la información y el precio.");
+            return;
+        }
+
+        let productoExistente = listaProductos.find(p => p.nombre === nombreProd);
+        if(productoExistente) {
+            productoExistente.precio = precioProd;
+            productoExistente.info = infoProd;
+            productoExistente.imagen = imgProd;
+        } else {
+            listaProductos.push({ nombre: nombreProd, precio: precioProd, info: infoProd, imagen: imgProd });
+        }
+        alert("¡Producto subido a la página con éxito!");
+    }
+
+    // Funciones del Administrador
+    function actualizarPanelAdmin() {
+        let contenedor = document.getElementById('contenido-admin');
+        
+        let htmlUsuarios = "<h4>Cuentas registradas:</h4><ul>";
+        baseDeDatosUsuarios.forEach((usr, idx) => {
+            htmlUsuarios += `<li><b>${usr.nickname}</b> (${usr.rol}) <button onclick="eliminarCuenta(${idx})" style="width:auto; padding:2px 5px; background:red;">Eliminar</button></li>`;
+        });
+        htmlUsuarios += "</ul>";
+
+        let htmlPrecios = "<h4>Actualizar precios de productos:</h4>";
+        listaProductos.forEach((prod, idx) => {
+            htmlPrecios += `
+                <div style="margin-bottom:8px;">
+                    <span>${prod.nombre} (Actual: $${prod.precio})</span>
+                    <input type="number" id="nuevo-precio-${idx}" placeholder="Nuevo precio" style="width:120px; display:inline-block; margin-left:5px;">
+                    <button onclick="cambiarPrecioAdmin(${idx})" style="width:auto; padding:3px 8px; display:inline-block;">Actualizar</button>
+                </div>
+            `;
+        });
+
+        contenedor.innerHTML = htmlUsuarios + htmlPrecios;
+    }
+
+    function eliminarCuenta(indice) {
+        baseDeDatosUsuarios.splice(indice, 1);
+        alert("Cuenta eliminada de la plataforma.");
+        actualizarPanelAdmin();
+    }
+
+    function cambiarPrecioAdmin(indice) {
+        let inputPrecio = document.getElementById(`nuevo-precio-${indice}`).value;
+        let precioNuevo = parseFloat(inputPrecio);
+        
+        if(!isNaN(precioNuevo)) {
+            listaProductos[indice].precio = precioNuevo;
+            alert("Precio actualizado exitosamente.");
+            actualizarPanelAdmin();
+        } else {
+            alert("Por favor ingrese un número válido.");
+        }
+    }
+</script>
+
+</body>
+</html>
